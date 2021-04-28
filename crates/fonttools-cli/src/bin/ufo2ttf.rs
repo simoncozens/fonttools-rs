@@ -42,14 +42,14 @@ fn compile_head(info: &norad::FontInfo, glyphs: &[Option<glyf::Glyph>]) -> head 
     let bounds: Vec<(i16, i16, i16, i16)> = glyphs
         .iter()
         .filter_map(|x| x.as_ref())
-        .map(|x| (x.xMin, x.xMax, x.yMin, x.yMax))
+        .map(|x| (x.xMin, x.yMin, x.xMax, x.yMax))
         .collect();
     let mut head_table = head::new(
         font_revision,
         info.units_per_em.map_or(1000, |f| f.get() as u16),
         bounds.iter().map(|x| x.0).min().unwrap_or(0), /* xmin */
-        bounds.iter().map(|x| x.1).max().unwrap_or(0), /* xmax */
-        bounds.iter().map(|x| x.2).min().unwrap_or(0), /* ymin */
+        bounds.iter().map(|x| x.1).min().unwrap_or(0), /* ymin */
+        bounds.iter().map(|x| x.2).max().unwrap_or(0), /* xmax */
         bounds.iter().map(|x| x.3).max().unwrap_or(0), /* ymax */
     );
 
