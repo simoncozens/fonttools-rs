@@ -1,15 +1,17 @@
 #![allow(unused_must_use, non_snake_case, non_camel_case_types)]
-use std::convert::TryInto;
+
 use std::fmt;
 
 use serde::de::{self, Visitor};
-use serde::{Serialize, Serializer};
 
 pub type uint16 = u16;
 pub type uint32 = u32;
 pub type int16 = i16;
 pub type Tag = [u8; 4];
+
+#[allow(clippy::upper_case_acronyms)]
 pub type FWORD = i16;
+#[allow(clippy::upper_case_acronyms)]
 pub type UFWORD = u16;
 
 fn ot_round(value: f32) -> i32 {
@@ -43,7 +45,7 @@ pub use Fixed as Version16Dot16;
 pub mod F2DOT14 {
     use crate::types::ot_round;
     use crate::types::I16Visitor;
-    use crate::types::I32Visitor;
+
     use serde::{Deserializer, Serializer};
     use std::convert::TryInto;
 
@@ -123,7 +125,7 @@ pub mod Counted {
     use serde::de::{SeqAccess, Visitor};
     use serde::ser::SerializeSeq;
     use serde::Serialize;
-    use serde::{Deserialize, Deserializer, Serializer};
+    use serde::{Deserializer, Serializer};
 
     pub fn serialize<S, T>(v: &[T], serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -203,8 +205,7 @@ pub mod Offset16 {
 pub mod Offset32 {
     use crate::error::Result;
     use crate::ser::SerializeOffsetStruct;
-    use serde::Serialize;
-    use serde::Serializer;
+    use serde::{Serialize, Serializer};
 
     pub fn serialize<S, T>(v: &T, mut serializer: S) -> Result<()>
     where
@@ -218,7 +219,6 @@ pub mod Offset32 {
 #[cfg(test)]
 mod tests {
     use crate::types::Counted;
-    use crate::types::Offset16;
     use crate::{de, ser};
     use serde::{Deserialize, Serialize};
 

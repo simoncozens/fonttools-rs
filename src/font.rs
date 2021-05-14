@@ -1,18 +1,17 @@
-use serde::de::SeqAccess;
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer};
-use serde::{Serialize, Serializer};
 use std::convert::{TryFrom, TryInto};
+use std::fs::File;
+use std::io::Write;
 use std::num::Wrapping;
-extern crate otspec;
+
+use indexmap::IndexMap;
+use otspec::types::*;
+use serde::de::{SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 use crate::avar::avar;
 use crate::head::head;
 use crate::hhea::hhea;
 use crate::maxp::maxp;
-use indexmap::IndexMap;
-use otspec::types::*;
-use std::fs::File;
-use std::io::Write;
 
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(untagged)]
@@ -50,6 +49,7 @@ struct TableRecord {
     length: uint32,
 }
 #[derive(Deserialize)]
+#[allow(non_snake_case)]
 struct TableHeader {
     sfntVersion: u32,
     numTables: u16,
@@ -195,7 +195,7 @@ impl<'de> Visitor<'de> for FontVisitor {
         write!(formatter, "A sequence of values")
     }
 
-    fn visit_seq<A: SeqAccess<'de>>(mut self, mut seq: A) -> Result<Self::Value, A::Error> {
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
         let header = seq
             .next_element::<TableHeader>()?
             .ok_or_else(|| serde::de::Error::custom("Expecting a table header"))?;
