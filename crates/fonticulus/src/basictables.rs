@@ -10,10 +10,10 @@ use fonttools::hhea;
 use fonttools::hmtx;
 use fonttools::maxp::maxp;
 use fonttools::name::{name, NameRecord, NameRecordID};
-use fonttools::os2::os2;
+use fonttools::os2::{calc_unicode_ranges, os2};
 use fonttools::post::post;
-use fonttools::utils::int_list_to_num;
-use std::collections::BTreeMap;
+use fonttools::utils::{int_list_to_num, BitInt};
+use std::collections::{BTreeMap, HashSet};
 use std::convert::TryInto;
 
 pub fn compile_head(info: &norad::FontInfo, glyf: &glyf::glyf) -> head {
@@ -163,7 +163,24 @@ pub fn compile_os2(
     let subscript_x_size = info
         .open_type_os2_subscript_x_size
         .unwrap_or((upm * 0.65).round() as i32) as i16;
-
+    let unicode_ranges = calc_unicode_ranges(&mapping);
+    let mut uni_range1 = BitInt::new();
+    let mut uni_range2 = BitInt::new();
+    let mut uni_range3 = BitInt::new();
+    let mut uni_range4 = BitInt::new();
+    for uni in unicode_ranges {
+        if uni >= 0 && uni <= 31 {
+            uni_range1.push(uni as u8);
+        } else if uni >= 32 && uni <= 63 {
+            uni_range2.push((uni - 32) as u8);
+        } else if uni >= 64 && uni <= 95 {
+            uni_range3.push((uni - 64) as u8);
+        } else if uni >= 96 && uni <= 127 {
+            uni_range4.push((uni - 96) as u8);
+        } else {
+            panic!("unicode range bit {} not supported", uni);
+        }
+    }
     let mut table = os2 {
         version: 4,
         xAvgCharWidth: (metrics.iter().map(|m| m.advanceWidth as f32).sum::<f32>()
@@ -226,10 +243,10 @@ pub fn compile_os2(
         panose: get_panose(info),
         ulCodePageRange1: Some(0),
         ulCodePageRange2: Some(0),
-        ulUnicodeRange1: 0b10100001000000000000000011111111, // XXX
-        ulUnicodeRange2: 0,                                  // XXX
-        ulUnicodeRange3: 0,                                  // XXX
-        ulUnicodeRange4: 0,                                  // XXX
+        ulUnicodeRange1: uni_range1.to_int(),
+        ulUnicodeRange2: uni_range2.to_int(),
+        ulUnicodeRange3: uni_range3.to_int(),
+        ulUnicodeRange4: uni_range4.to_int(),
         usFirstCharIndex: *mapping.keys().min().unwrap_or(&0xFFFF) as u16,
         usLastCharIndex: *mapping.keys().max().unwrap_or(&0xFFFF) as u16,
         usLowerOpticalPointSize: None,
