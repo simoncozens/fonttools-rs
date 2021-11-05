@@ -97,6 +97,8 @@ pub enum LoadedTable {
     hhea(Rc<tables::hhea::hhea>),
     /// Contains a horizontal metrics table.
     hmtx(Rc<tables::hmtx::hmtx>),
+    /// Contains a vertical header table.
+    vhea(Rc<tables::vhea::vhea>),
     /// Contains an index-to-location table.
     loca(Rc<tables::loca::loca>),
     /// Contains a math typesetting table.
@@ -325,6 +327,7 @@ impl TableSet {
             b"GSUB" => otspec::de::from_bytes::<tables::GSUB::GSUB>(&data)?.into(),
             b"head" => otspec::de::from_bytes::<tables::head::head>(&data)?.into(),
             b"hhea" => otspec::de::from_bytes::<tables::hhea::hhea>(&data)?.into(),
+            b"vhea" => otspec::de::from_bytes::<tables::vhea::vhea>(&data)?.into(),
             b"MATH" => otspec::de::from_bytes::<tables::MATH::MATH>(&data)?.into(),
             b"maxp" => otspec::de::from_bytes::<tables::maxp::maxp>(&data)?.into(),
             b"name" => otspec::de::from_bytes::<tables::name::name>(&data)?.into(),
@@ -574,6 +577,7 @@ table_boilerplate!(tables::glyf::glyf, glyf);
 table_boilerplate!(tables::gvar::gvar, gvar);
 table_boilerplate!(tables::head::head, head);
 table_boilerplate!(tables::hhea::hhea, hhea);
+table_boilerplate!(tables::vhea::vhea, vhea);
 table_boilerplate!(tables::hmtx::hmtx, hmtx);
 table_boilerplate!(tables::loca::loca, loca);
 table_boilerplate!(tables::maxp::maxp, maxp);
@@ -597,6 +601,7 @@ impl Serialize for LoadedTable {
             LoadedTable::head(expr) => expr.to_bytes(data),
             LoadedTable::hhea(expr) => expr.to_bytes(data),
             LoadedTable::hmtx(_) => unimplemented!(),
+            LoadedTable::vhea(expr) => expr.to_bytes(data),
             LoadedTable::glyf(_) => unimplemented!(),
             LoadedTable::loca(_) => unimplemented!(),
             LoadedTable::maxp(expr) => expr.to_bytes(data),

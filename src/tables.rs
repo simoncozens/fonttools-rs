@@ -41,3 +41,5 @@ pub mod name;
 pub mod os2;
 /// The `post` (PostScript) table
 pub mod post;
+/// The `vhea` (Vertical Header) table
+pub mod vhea;
