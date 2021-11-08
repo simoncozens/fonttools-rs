@@ -182,8 +182,24 @@ impl From<F2DOT14> for f32 {
     }
 }
 
-#[derive(Shrinkwrap, Debug, PartialEq)]
-pub struct Version16Dot16(pub U16F16);
+/// A 16-bit major version number and a minor version number in the range `0..=9`.
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
+pub struct Version16Dot16(U16F16);
+
+impl Version16Dot16 {
+    /// Construct a new version from a float.
+    ///
+    /// The input should be a positive value, where the fractional part is in the
+    /// sequence, `{.0, .1, .. .9}`.
+    pub fn from_num(float: f32) -> Self {
+        Self(U16F16::from_num(float))
+    }
+
+    /// Convert this version to a float.
+    pub fn to_float(self) -> f32 {
+        self.0.to_num()
+    }
+}
 
 impl Serialize for Version16Dot16 {
     fn to_bytes(&self, data: &mut Vec<u8>) -> Result<(), SerializationError> {
@@ -198,6 +214,7 @@ impl Serialize for Version16Dot16 {
         2
     }
 }
+
 impl Deserialize for Version16Dot16 {
     fn from_bytes(c: &mut ReaderContext) -> Result<Self, DeserializationError> {
         let packed: i32 = c.de()?;
@@ -208,16 +225,6 @@ impl Deserialize for Version16Dot16 {
     }
 }
 
-impl From<U16F16> for Version16Dot16 {
-    fn from(num: U16F16) -> Self {
-        Self(num)
-    }
-}
-impl From<Version16Dot16> for U16F16 {
-    fn from(num: Version16Dot16) -> Self {
-        num.0
-    }
-}
 #[derive(Shrinkwrap, Debug, PartialEq)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct LONGDATETIME(pub chrono::NaiveDateTime);
@@ -255,4 +262,18 @@ impl From<LONGDATETIME> for chrono::NaiveDateTime {
 }
 
 pub use crate::offsets::{Offset16, Offset32, VecOffset, VecOffset16, VecOffset32};
-// OK, the offset type is going to be terrifying.
+// OK, the offset type is going to be terrifying.+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_16_ser() {
+        let version = Version16Dot16::from_num(1.9);
+        let mut r = Vec::new();
+        version.to_bytes(&mut r).unwrap();
+        let raw = u32::from_be_bytes([r[0], r[1], r[2], r[3]]);
+        assert_eq!(raw, 0x00019000);
+    }
+}

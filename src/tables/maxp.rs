@@ -54,8 +54,7 @@ impl Serialize for MaxpVariant {
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct maxp {
     /// The version number as a fixed U16F16 value (for ease of serialization)
-    #[otspec(with = "Version16Dot16")]
-    pub version: U16F16,
+    pub version: Version16Dot16,
     /// Either a maxp 0.5 table or a maxp 1.0 table
     pub table: MaxpVariant,
 }
@@ -64,7 +63,7 @@ impl maxp {
     /// Creates a new `maxp` table with version=0.5, given a number of glyphs
     pub fn new05(num_glyphs: u16) -> maxp {
         maxp {
-            version: U16F16::from_num(0.5),
+            version: Version16Dot16::from_num(0.5),
             table: MaxpVariant::Maxp05(maxp05 {
                 numGlyphs: num_glyphs,
             }),
@@ -84,7 +83,7 @@ impl maxp {
         maxComponentDepth: u16,
     ) -> maxp {
         maxp {
-            version: U16F16::from_num(1.0),
+            version: Version16Dot16::from_num(1.0),
             table: MaxpVariant::Maxp10(maxp10 {
                 numGlyphs,
                 maxPoints,
@@ -126,14 +125,14 @@ impl Deserialize for maxp {
             0x00005000 => {
                 let table: maxp05 = c.de()?;
                 Ok(maxp {
-                    version: U16F16::from_num(0.5),
+                    version: Version16Dot16::from_num(0.5),
                     table: MaxpVariant::Maxp05(table),
                 })
             }
             0x00010000 => {
                 let table: maxp10 = c.de()?;
                 Ok(maxp {
-                    version: U16F16::from_num(1.0),
+                    version: Version16Dot16::from_num(1.0),
                     table: MaxpVariant::Maxp10(table),
                 })
             }
@@ -144,12 +143,12 @@ impl Deserialize for maxp {
 
 #[cfg(test)]
 mod tests {
-    use otspec::{ser, types::U16F16};
+    use otspec::{ser, types::Version16Dot16};
 
     #[test]
     fn maxp_ser_v05() {
         let v = super::maxp {
-            version: U16F16::from_num(0.5),
+            version: Version16Dot16::from_num(0.5),
             table: super::MaxpVariant::Maxp05(super::maxp05 { numGlyphs: 935 }),
         };
         let binary_maxp = ser::to_bytes(&v).unwrap();
@@ -162,7 +161,7 @@ mod tests {
     #[test]
     fn maxp_ser_v10() {
         let v = super::maxp {
-            version: U16F16::from_num(1.0),
+            version: Version16Dot16::from_num(1.0),
             table: super::MaxpVariant::Maxp10(super::maxp10 {
                 numGlyphs: 1117,
                 maxPoints: 98,
@@ -192,7 +191,7 @@ mod tests {
     #[test]
     fn maxp_de_v05() {
         let v = super::maxp {
-            version: U16F16::from_num(0.5),
+            version: Version16Dot16::from_num(0.5),
             table: super::MaxpVariant::Maxp05(super::maxp05 { numGlyphs: 935 }),
         };
         let binary_maxp = vec![0x00, 0x00, 0x50, 0x00, 0x03, 0xa7];

@@ -267,7 +267,7 @@ mod tests {
     use crate::tables::hhea::hhea;
     use crate::tables::maxp;
     use otspec::ser;
-    use otspec::types::U16F16;
+    use otspec::types::Version16Dot16;
 
     #[test]
     fn test_checksum() {
@@ -322,7 +322,7 @@ mod tests {
             numberOfHMetrics: 1117,
         };
         let fmaxp = maxp::maxp {
-            version: U16F16::from_num(1.0),
+            version: Version16Dot16::from_num(1.0),
             table: maxp::MaxpVariant::Maxp10(maxp::maxp10 {
                 numGlyphs: 1117,
                 maxPoints: 98,
