@@ -7,6 +7,8 @@ use otspec_macros::tables;
 /// The 'post' OpenType tag.
 pub const TAG: Tag = crate::tag!("post");
 
+const VERSION_2_0: Version16Dot16 = Version16Dot16::from_major_minor(2, 0);
+
 /// The list of 258 standard Macintosh glyph names.
 /// Names not in this list will be stored separately in the post table if
 /// version==2
@@ -359,7 +361,7 @@ impl Serialize for post {
         core.to_bytes(data)?;
         let mut glyph_name_table: Vec<u8> = Vec::new();
         let mut glyph_name_table_items = 0;
-        if core.version == Version16Dot16::from_num(2.0) {
+        if core.version == VERSION_2_0 {
             if let Some(v) = &self.glyphnames {
                 (v.len() as u16).to_bytes(data)?;
                 for name in v {
@@ -386,7 +388,7 @@ impl Deserialize for post {
     fn from_bytes(c: &mut ReaderContext) -> Result<Self, DeserializationError> {
         let core: postcore = c.de()?;
         let mut glyphnames = None;
-        if core.version == Version16Dot16::from_num(2.0) {
+        if core.version == VERSION_2_0 {
             let num_glyphs: uint16 = c.de()?;
             let glyph_offsets: Vec<u16> = c.de_counted(num_glyphs.into())?;
             let mut glyphnames_vec = Vec::with_capacity(num_glyphs as usize);
@@ -429,8 +431,8 @@ impl Deserialize for post {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
+    use super::*;
     use otspec::ser;
-    use otspec::types::Version16Dot16;
 
     #[test]
     fn post_otspec_v20() {
@@ -485,7 +487,7 @@ mod tests {
             0x6f, 0x77, 0x2d, 0x61, 0x72, 0x07, 0x75, 0x6e, 0x69, 0x30, 0x36, 0x34, 0x45,
         ];
         let deserialized: super::post = otspec::de::from_bytes(&binary_post).unwrap();
-        assert_eq!(deserialized.version, Version16Dot16::from_num(2.0));
+        assert_eq!(deserialized.version, VERSION_2_0);
         assert_approx_eq!(deserialized.italicAngle, 0.0);
         assert_eq!(deserialized.underlinePosition, -100);
         assert_eq!(deserialized.underlineThickness, 50);

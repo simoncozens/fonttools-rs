@@ -184,7 +184,7 @@ impl From<F2DOT14> for f32 {
 
 /// A 16-bit major version number and a minor version number in the range `0..=9`.
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
-pub struct Version16Dot16(U16F16);
+pub struct Version16Dot16(u32);
 
 impl Version16Dot16 {
     /// Construct a new version from a float.
@@ -192,24 +192,39 @@ impl Version16Dot16 {
     /// The input should be a positive value, where the fractional part is in the
     /// sequence, `{.0, .1, .. .9}`.
     pub fn from_num(float: f32) -> Self {
-        Self(U16F16::from_num(float))
+        let major = float.trunc() as u16;
+        let minor = (float.fract() * 10.) as u8;
+        assert!(minor <= 9);
+        Self::from_major_minor(major, minor)
     }
 
-    /// Convert this version to a float.
-    pub fn to_float(self) -> f32 {
-        self.0.to_num()
+    /// Construct a new version from a major and minor pair.
+    ///
+    /// The minor version is expected to be in the range (0..=9), although
+    /// this is not enforced (because we cannot assert in a const fn)
+    pub const fn from_major_minor(major: u16, minor: u8) -> Self {
+        let major = (major as u32) << 16;
+        // we only take the lower nibble
+        let minor = (minor & 0x0F) as u32;
+        Self(major | minor << 12)
+    }
+
+    /// The major version number.
+    pub fn major(self) -> u16 {
+        ((self.0 >> 16) & 0xFFFF) as u16
+    }
+
+    /// The minor version number.
+    pub fn minor(&self) -> u8 {
+        ((self.0 >> 12) & 0x0f) as u8
     }
 }
 
 impl Serialize for Version16Dot16 {
     fn to_bytes(&self, data: &mut Vec<u8>) -> Result<(), SerializationError> {
-        let major = self.0.floor().to_num::<u8>();
-        let minor = (self.0.frac().to_num::<f32>() * 160.0) as u8;
-        0_u8.to_bytes(data)?;
-        major.to_bytes(data)?;
-        minor.to_bytes(data)?;
-        0_u8.to_bytes(data)
+        self.0.to_bytes(data)
     }
+
     fn ot_binary_size(&self) -> usize {
         2
     }
@@ -217,11 +232,8 @@ impl Serialize for Version16Dot16 {
 
 impl Deserialize for Version16Dot16 {
     fn from_bytes(c: &mut ReaderContext) -> Result<Self, DeserializationError> {
-        let packed: i32 = c.de()?;
-        let orig = packed.to_be_bytes();
-        let major = orig[1] as f32;
-        let minor = orig[2] as f32 / 160.0;
-        Ok(Self(U16F16::from_num(major + minor)))
+        let packed: u32 = c.de()?;
+        Ok(Self(packed))
     }
 }
 
@@ -269,11 +281,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn version_16_ser() {
+    fn version_16_repr() {
         let version = Version16Dot16::from_num(1.9);
-        let mut r = Vec::new();
-        version.to_bytes(&mut r).unwrap();
-        let raw = u32::from_be_bytes([r[0], r[1], r[2], r[3]]);
-        assert_eq!(raw, 0x00019000);
+        assert_eq!(version.major(), 1);
+        assert_eq!(version.minor(), 9);
+        let exp = 0x00019000;
+        assert_eq!(version.0, exp, "found: 0x{:08x}", version.0);
+
+        let version = Version16Dot16::from_major_minor(505, 2);
+        assert_eq!(version.major(), 505);
+        assert_eq!(version.minor(), 2);
     }
 }
