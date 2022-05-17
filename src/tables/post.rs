@@ -7,6 +7,8 @@ use otspec_macros::tables;
 /// The 'post' OpenType tag.
 pub const TAG: Tag = crate::tag!("post");
 
+const VERSION_2_0: Version16Dot16 = Version16Dot16::from_major_minor(2, 0);
+
 /// The list of 258 standard Macintosh glyph names.
 /// Names not in this list will be stored separately in the post table if
 /// version==2
@@ -288,7 +290,7 @@ tables!( postcore {
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct post {
     /// version of the post table (either 0.5 or 1.0), expressed as a Fixed::U16F16.
-    pub version: U16F16,
+    pub version: Version16Dot16,
     /// Italic angle in counter-clockwise degrees.
     pub italicAngle: f32,
     /// Suggested distance of the top of the underline from the baseline.
@@ -322,7 +324,7 @@ impl post {
         glyphnames: Option<Vec<String>>,
     ) -> post {
         post {
-            version: U16F16::from_num(version),
+            version: Version16Dot16::from_num(version),
             italicAngle,
             underlinePosition,
             underlineThickness,
@@ -340,7 +342,7 @@ impl post {
     /// Versions are stored internally as fixed U16F16 numbers for ease of
     /// serialization, so this function stops you from having to mess with them.
     pub fn set_version(&mut self, version: f32) {
-        self.version = U16F16::from_num(version);
+        self.version = Version16Dot16::from_num(version)
     }
 }
 impl Serialize for post {
@@ -359,7 +361,7 @@ impl Serialize for post {
         core.to_bytes(data)?;
         let mut glyph_name_table: Vec<u8> = Vec::new();
         let mut glyph_name_table_items = 0;
-        if core.version == U16F16::from_num(2.0) {
+        if core.version == VERSION_2_0 {
             if let Some(v) = &self.glyphnames {
                 (v.len() as u16).to_bytes(data)?;
                 for name in v {
@@ -386,7 +388,7 @@ impl Deserialize for post {
     fn from_bytes(c: &mut ReaderContext) -> Result<Self, DeserializationError> {
         let core: postcore = c.de()?;
         let mut glyphnames = None;
-        if core.version == U16F16::from_num(2.0) {
+        if core.version == VERSION_2_0 {
             let num_glyphs: uint16 = c.de()?;
             let glyph_offsets: Vec<u16> = c.de_counted(num_glyphs.into())?;
             let mut glyphnames_vec = Vec::with_capacity(num_glyphs as usize);
@@ -429,8 +431,8 @@ impl Deserialize for post {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
+    use super::*;
     use otspec::ser;
-    use otspec::types::U16F16;
 
     #[test]
     fn post_otspec_v20() {
@@ -485,7 +487,7 @@ mod tests {
             0x6f, 0x77, 0x2d, 0x61, 0x72, 0x07, 0x75, 0x6e, 0x69, 0x30, 0x36, 0x34, 0x45,
         ];
         let deserialized: super::post = otspec::de::from_bytes(&binary_post).unwrap();
-        assert_eq!(deserialized.version, U16F16::from_num(2.0));
+        assert_eq!(deserialized.version, VERSION_2_0);
         assert_approx_eq!(deserialized.italicAngle, 0.0);
         assert_eq!(deserialized.underlinePosition, -100);
         assert_eq!(deserialized.underlineThickness, 50);
